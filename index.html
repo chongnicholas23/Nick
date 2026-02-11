@@ -75,11 +75,23 @@ button:disabled {
 .cell {
   background: white;
   border: 2px solid #333;
-  aspect-ratio: 1 / 1;
+  position: relative;
+
+  /* Fallback for older iPads */
+  width: 100%;
+  padding-top: 100%;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
+}
+
+/* Modern browsers override fallback */
+@supports (aspect-ratio: 1 / 1) {
+  .cell {
+    padding-top: 0;
+    aspect-ratio: 1 / 1;
+  }
 }
 
 /* MARKED */
@@ -374,5 +386,6 @@ function removeBingoOverlay() {
 
 </body>
 </html>
+
 
 

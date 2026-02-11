@@ -1,391 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Team Bingo - CNY Edition</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CNY Bingo</title>
 
 <style>
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
 body {
   font-family: Arial, sans-serif;
-  text-align: center;
-  background: #f5f5f5;
-  margin: 0;
+  background: #f44336;
+  color: #222;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
 }
 
 h1 {
-  margin: 12px 0;
-}
-
-button {
-  font-size: 18px;
-  padding: 10px 18px;
-  margin: 6px;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-#timer {
-  font-size: 32px;
-  font-weight: bold;
   margin: 10px 0;
-  color: #c62828;
+  color: #fff;
 }
 
-/* MAIN LAYOUT */
-#gameArea {
+#game-container {
+  width: 95%;
+  max-width: 600px;
+  flex: 1;
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 20px;
-  padding: 12px;
+  flex-direction: column;
 }
 
-/* SYMBOL AREAS */
-#symbolsLeft {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(5, 1fr);
-  gap: 12px;
-  width: 28vw;
-  max-width: 320px;
-}
-
-#symbolsRight {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(5, 1fr);
-  gap: 12px;
-  width: 20vw;
-  max-width: 240px;
-}
-
-/* BOARD */
-#board {
+#bingo-board {
+  flex: 1;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
-  width: 42vw;
-  max-width: 480px;
+  grid-template-rows: repeat(5, 1fr);
+  gap: 6px;
 }
 
 .cell {
   background: white;
   border: 2px solid #333;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
 
-  /* Fallback for older iPads */
-  width: 100%;
-  padding-top: 100%;
-
+.cell-inner {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Modern browsers override fallback */
-@supports (aspect-ratio: 1 / 1) {
-  .cell {
-    padding-top: 0;
-    aspect-ratio: 1 / 1;
-  }
-}
-
-/* MARKED */
-.cell.marked::after {
-  content: "✖";
-  position: absolute;
-  font-size: 48px;
-  color: rgba(200, 0, 0, 0.85);
-  font-weight: bold;
-}
-
-.cell.marked img {
-  opacity: 0.4;
-}
-
-/* SYMBOL */
-.symbol {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  cursor: grab;
-  background: #4CAF50;
-  border-radius: 14px;
+.cell img {
+  max-width: 90%;
+  max-height: 90%;
   touch-action: none;
 }
 
-/* IPAD / MOBILE */
-@media (max-width: 1024px) {
-  #gameArea {
-    flex-direction: column;
-    align-items: center;
-  }
+.cell.win {
+  background: #ffeb3b;
+}
 
-  #symbolsLeft,
-  #symbolsRight {
-    grid-template-columns: repeat(5, 1fr);
-    width: 95vw;
-    max-width: 700px;
-  }
+#image-pool {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  background: #fff;
+  border-radius: 8px;
+  margin-top: 8px;
+}
 
-  #board {
-    width: 95vw;
-    max-width: 700px;
-  }
+#image-pool img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  border: 1px solid #ccc;
+  background: #fafafa;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🧧 Team Bingo – CNY Edition 🧧</h1>
+<h1>🧧 CNY Bingo 🧧</h1>
 
-<div id="timer">05:00</div>
-
-<div>
-  <button id="startBtn">Start</button>
-  <button id="confirmBtn">Confirm</button>
-  <button id="resetBtn">Reset</button>
-</div>
-
-<div id="gameArea">
-  <div id="symbolsLeft"></div>
-  <div id="board"></div>
-  <div id="symbolsRight"></div>
+<div id="game-container">
+  <div id="bingo-board"></div>
+  <div id="image-pool"></div>
 </div>
 
 <script>
-/* ---------- CONFIG ---------- */
+const board = document.getElementById("bingo-board");
+const pool = document.getElementById("image-pool");
+
+/* 🔴 Replace with your original image paths */
 const images = [
-  "images/01.jpg","images/02.png","images/03.jpg","images/04.jpg","images/05.png",
-  "images/06.jpg","images/07.png","images/08.jpg","images/09.jpg","images/10.jpg",
-  "images/11.jpg","images/12.jpg","images/13.png","images/14.jpg","images/15.jpg",
-  "images/16.jpg","images/17.png","images/18.jpg","images/19.jpg","images/20.jpg",
-  "images/21.jpg","images/22.png","images/23.jpg","images/24.jpg","images/25.jpg"
+  "images/1.png","images/2.png","images/3.png","images/4.png","images/5.png",
+  "images/6.png","images/7.png","images/8.png","images/9.png","images/10.png",
+  "images/11.png","images/12.png","images/13.png","images/14.png","images/15.png",
+  "images/16.png","images/17.png","images/18.png","images/19.png","images/20.png",
+  "images/21.png","images/22.png","images/23.png","images/24.png","images/25.png"
 ];
 
-let locked = false;
-let dragged = null;
-let timerInterval = null;
-let timeRemaining = 300;
+const cells = [];
 
-/* ---------- GAME FLOW ---------- */
-document.getElementById("startBtn").onclick = startGame;
-document.getElementById("confirmBtn").onclick = confirmBoard;
-document.getElementById("resetBtn").onclick = resetGame;
+/* Create board */
+for (let i = 0; i < 25; i++) {
+  const cell = document.createElement("div");
+  cell.className = "cell";
 
-function startGame() {
-  if (timerInterval) return; // prevent double start
+  const inner = document.createElement("div");
+  inner.className = "cell-inner";
 
-  locked = false;
-  document.getElementById("startBtn").disabled = true;
+  cell.appendChild(inner);
+  board.appendChild(cell);
+  cells.push(cell);
 
-  createBoard();
-  createSymbols(shuffle([...images]));
-  startTimer();
-  removeBingoOverlay();
-}
-
-function startTimer() {
-  timeRemaining = 300;
-  updateTimerDisplay();
-
-  timerInterval = setInterval(() => {
-    timeRemaining--;
-    updateTimerDisplay();
-    if (timeRemaining <= 0) {
-      clearInterval(timerInterval);
-      autoConfirm();
-    }
-  }, 1000);
-}
-
-function updateTimerDisplay() {
-  const m = String(Math.floor(timeRemaining / 60)).padStart(2, '0');
-  const s = String(timeRemaining % 60).padStart(2, '0');
-  document.getElementById("timer").textContent = `${m}:${s}`;
-}
-
-function autoConfirm() {
-  if (!locked) {
-    locked = true;
-    disableAllButtons();
-    alert("⏰ Time's up! Board automatically confirmed!");
-  }
-}
-
-/* ---------- BOARD ---------- */
-function createBoard() {
-  const board = document.getElementById("board");
-  board.innerHTML = "";
-
-  for (let i = 0; i < 25; i++) {
-    const cell = document.createElement("div");
-    cell.className = "cell";
-
-    cell.ondragover = e => e.preventDefault();
-    cell.ondrop = e => {
-      e.preventDefault();
-      if (!locked && dragged) {
-        if (cell.firstChild) returnSymbolToSide(cell.firstChild);
-        cell.appendChild(dragged);
-      }
-    };
-
-    cell.onclick = () => {
-      if (locked && cell.firstChild) {
-        cell.classList.toggle("marked");
-        checkBingo();
-      }
-    };
-
-    board.appendChild(cell);
-  }
-}
-
-/* ---------- SYMBOLS ---------- */
-function createSymbols(list) {
-  const left = document.getElementById("symbolsLeft");
-  const right = document.getElementById("symbolsRight");
-  left.innerHTML = "";
-  right.innerHTML = "";
-
-  list.forEach((src, index) => {
-    const img = document.createElement("img");
-    img.src = src;
-    img.className = "symbol";
-    img.draggable = true;
-
-    img.onerror = () => img.style.display = "none";
-
-    img.ondragstart = () => dragged = img;
-    img.ondragend = () => dragged = null;
-
-    (index < 15 ? left : right).appendChild(img);
-  });
-}
-
-function returnSymbolToSide(img) {
-  const left = document.getElementById("symbolsLeft");
-  const right = document.getElementById("symbolsRight");
-  (left.children.length <= right.children.length ? left : right).appendChild(img);
-}
-
-/* ---------- CONTROLS ---------- */
-function confirmBoard() {
-  if (!locked) {
-    locked = true;
-    clearInterval(timerInterval);
-    disableAllButtons();
-    alert("Board confirmed! 🎉 Game start!");
-  }
-}
-
-function resetGame() {
-  clearInterval(timerInterval);
-  timerInterval = null;
-  document.getElementById("timer").textContent = "05:00";
-  document.getElementById("board").innerHTML = "";
-  document.getElementById("symbolsLeft").innerHTML = "";
-  document.getElementById("symbolsRight").innerHTML = "";
-  locked = false;
-  removeBingoOverlay();
-  document.getElementById("startBtn").disabled = false;
-  document.getElementById("confirmBtn").disabled = false;
-  document.getElementById("resetBtn").disabled = false;
-}
-
-function disableAllButtons() {
-  document.getElementById("confirmBtn").disabled = true;
-  document.getElementById("resetBtn").disabled = true;
-}
-
-/* ---------- UTILS ---------- */
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-/* ---------- BINGO CHECK ---------- */
-function checkBingo() {
-  const cells = Array.from(document.querySelectorAll("#board .cell"));
-  const lines = [
-    [0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],
-    [0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],
-    [0,6,12,18,24],[4,8,12,16,20]
-  ];
-
-  for (const line of lines) {
-    if (line.every(i => cells[i].classList.contains("marked"))) {
-      showBingo(line.map(i => cells[i]));
-      break;
-    }
-  }
-}
-
-/* ---------- BINGO OVERLAY ---------- */
-function showBingo(winningLine) {
-  removeBingoOverlay(); // remove previous overlay if exists
-
-  const overlay = document.createElement("div");
-  overlay.id = "bingoOverlay";
-  overlay.style.position = "fixed";
-  overlay.style.top = "0";
-  overlay.style.left = "0";
-  overlay.style.width = "100%";
-  overlay.style.height = "100%";
-  overlay.style.background = "rgba(0,0,0,0.8)";
-  overlay.style.color = "#fff";
-  overlay.style.display = "flex";
-  overlay.style.flexDirection = "column";
-  overlay.style.alignItems = "center";
-  overlay.style.justifyContent = "center";
-  overlay.style.zIndex = "1000";
-  overlay.style.textAlign = "center";
-
-  const text = document.createElement("div");
-  text.textContent = "BINGO!! 🎉";
-  text.style.fontSize = "96px";
-  text.style.fontWeight = "bold";
-  text.style.marginBottom = "30px";
-  text.style.textShadow = "4px 4px 8px #000";
-  overlay.appendChild(text);
-
-  // Container for winning symbols
-  const lineContainer = document.createElement("div");
-  lineContainer.style.display = "flex";
-  lineContainer.style.gap = "12px";
-
-  // 🔴 RESTORED LOGIC FROM V1
-  winningLine.forEach(cell => {
-    if (cell.firstChild) {
-      const img = cell.firstChild.cloneNode(true);
-      img.style.width = "120px";
-      img.style.height = "120px";
-      img.style.objectFit = "contain";
-      lineContainer.appendChild(img);
+  cell.addEventListener("dragover", e => e.preventDefault());
+  cell.addEventListener("drop", e => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData("text");
+    const img = document.getElementById(id);
+    if (img && inner.children.length === 0) {
+      inner.appendChild(img);
+      checkWin();
     }
   });
-
-  overlay.appendChild(lineContainer);
-  document.body.appendChild(overlay);
 }
 
-function removeBingoOverlay() {
-  const o = document.getElementById("bingoOverlay");
-  if (o) o.remove();
+/* Shuffle images */
+images.sort(() => Math.random() - 0.5);
+
+/* Image pool */
+images.forEach((src, index) => {
+  const img = document.createElement("img");
+  img.src = src;
+  img.id = "img" + index;
+  img.draggable = true;
+
+  img.addEventListener("dragstart", e => {
+    e.dataTransfer.setData("text", img.id);
+  });
+
+  pool.appendChild(img);
+});
+
+/* Win logic */
+const winningLines = [
+  [0,1,2,3,4],
+  [5,6,7,8,9],
+  [10,11,12,13,14],
+  [15,16,17,18,19],
+  [20,21,22,23,24],
+  [0,5,10,15,20],
+  [1,6,11,16,21],
+  [2,7,12,17,22],
+  [3,8,13,18,23],
+  [4,9,14,19,24],
+  [0,6,12,18,24],
+  [4,8,12,16,20]
+];
+
+function checkWin() {
+  winningLines.forEach(winningLine => {
+    const filled = winningLine.every(i =>
+      cells[i].querySelector(".cell-inner").children.length > 0
+    );
+
+    if (filled) {
+      winningLine.forEach(i => cells[i].classList.add("win"));
+    }
+  });
 }
 </script>
 
 </body>
 </html>
-
-
-

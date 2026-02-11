@@ -320,21 +320,49 @@ function checkBingo() {
 
 /* ---------- BINGO OVERLAY ---------- */
 function showBingo(winningLine) {
-  removeBingoOverlay();
+  removeBingoOverlay(); // remove previous overlay if exists
+
   const overlay = document.createElement("div");
   overlay.id = "bingoOverlay";
-  overlay.style = `
-    position:fixed;top:0;left:0;width:100%;height:100%;
-    background:rgba(0,0,0,.8);color:#fff;display:flex;
-    flex-direction:column;align-items:center;justify-content:center;z-index:1000;
-  `;
+  overlay.style.position = "fixed";
+  overlay.style.top = "0";
+  overlay.style.left = "0";
+  overlay.style.width = "100%";
+  overlay.style.height = "100%";
+  overlay.style.background = "rgba(0,0,0,0.8)";
+  overlay.style.color = "#fff";
+  overlay.style.display = "flex";
+  overlay.style.flexDirection = "column";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  overlay.style.zIndex = "1000";
+  overlay.style.textAlign = "center";
 
   const text = document.createElement("div");
   text.textContent = "BINGO!! 🎉";
   text.style.fontSize = "96px";
+  text.style.fontWeight = "bold";
   text.style.marginBottom = "30px";
-
+  text.style.textShadow = "4px 4px 8px #000";
   overlay.appendChild(text);
+
+  // Container for winning symbols
+  const lineContainer = document.createElement("div");
+  lineContainer.style.display = "flex";
+  lineContainer.style.gap = "12px";
+
+  // 🔴 RESTORED LOGIC FROM V1
+  winningLine.forEach(cell => {
+    if (cell.firstChild) {
+      const img = cell.firstChild.cloneNode(true);
+      img.style.width = "120px";
+      img.style.height = "120px";
+      img.style.objectFit = "contain";
+      lineContainer.appendChild(img);
+    }
+  });
+
+  overlay.appendChild(lineContainer);
   document.body.appendChild(overlay);
 }
 
@@ -346,4 +374,5 @@ function removeBingoOverlay() {
 
 </body>
 </html>
+
 

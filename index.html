@@ -72,27 +72,33 @@ button:disabled {
   max-width: 480px;
 }
 
+/* CELL (square fallback for old iPads) */
 .cell {
   background: white;
   border: 2px solid #333;
   position: relative;
-
-  /* Fallback for older iPads */
   width: 100%;
   padding-top: 100%;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow: hidden;
 }
 
-/* Modern browsers override fallback */
+/* Modern browsers */
 @supports (aspect-ratio: 1 / 1) {
   .cell {
     padding-top: 0;
     aspect-ratio: 1 / 1;
   }
 }
+
+/* Inner flex container (key fix) */
+.cell-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* MARKED */
 .cell.marked::after {
   content: "✖";
@@ -100,6 +106,7 @@ button:disabled {
   font-size: 48px;
   color: rgba(200, 0, 0, 0.85);
   font-weight: bold;
+  z-index: 2;
 }
 
 .cell.marked img {
@@ -108,16 +115,19 @@ button:disabled {
 
 /* SYMBOL */
 .symbol {
-  width: 100%;
-  height: 100%;
+  max-width: 85%;
+  max-height: 85%;
+  width: auto;
+  height: auto;
   object-fit: contain;
   cursor: grab;
   background: #4CAF50;
   border-radius: 14px;
   touch-action: none;
+  display: block;
 }
 
-/* IPAD / MOBILE */
+/* MOBILE / IPAD */
 @media (max-width: 1024px) {
   #gameArea {
     flex-direction: column;
@@ -158,7 +168,6 @@ button:disabled {
 </div>
 
 <script>
-/* ---------- CONFIG ---------- */
 const images = [
   "images/01.jpg","images/02.png","images/03.jpg","images/04.jpg","images/05.png",
   "images/06.jpg","images/07.png","images/08.jpg","images/09.jpg","images/10.jpg",
@@ -172,17 +181,14 @@ let dragged = null;
 let timerInterval = null;
 let timeRemaining = 300;
 
-/* ---------- GAME FLOW ---------- */
-document.getElementById("startBtn").onclick = startGame;
-document.getElementById("confirmBtn").onclick = confirmBoard;
-document.getElementById("resetBtn").onclick = resetGame;
+startBtn.onclick = startGame;
+confirmBtn.onclick = confirmBoard;
+resetBtn.onclick = resetGame;
 
 function startGame() {
-  if (timerInterval) return; // prevent double start
-
+  if (timerInterval) return;
   locked = false;
-  document.getElementById("startBtn").disabled = true;
-
+  startBtn.disabled = true;
   createBoard();
   createSymbols(shuffle([...images]));
   startTimer();
@@ -191,11 +197,10 @@ function startGame() {
 
 function startTimer() {
   timeRemaining = 300;
-  updateTimerDisplay();
-
+  updateTimer();
   timerInterval = setInterval(() => {
     timeRemaining--;
-    updateTimerDisplay();
+    updateTimer();
     if (timeRemaining <= 0) {
       clearInterval(timerInterval);
       autoConfirm();
@@ -203,40 +208,41 @@ function startTimer() {
   }, 1000);
 }
 
-function updateTimerDisplay() {
+function updateTimer() {
   const m = String(Math.floor(timeRemaining / 60)).padStart(2, '0');
   const s = String(timeRemaining % 60).padStart(2, '0');
-  document.getElementById("timer").textContent = `${m}:${s}`;
+  timer.textContent = `${m}:${s}`;
 }
 
 function autoConfirm() {
   if (!locked) {
     locked = true;
-    disableAllButtons();
+    disableButtons();
     alert("⏰ Time's up! Board automatically confirmed!");
   }
 }
 
-/* ---------- BOARD ---------- */
 function createBoard() {
-  const board = document.getElementById("board");
   board.innerHTML = "";
-
   for (let i = 0; i < 25; i++) {
     const cell = document.createElement("div");
     cell.className = "cell";
+
+    const content = document.createElement("div");
+    content.className = "cell-content";
+    cell.appendChild(content);
 
     cell.ondragover = e => e.preventDefault();
     cell.ondrop = e => {
       e.preventDefault();
       if (!locked && dragged) {
-        if (cell.firstChild) returnSymbolToSide(cell.firstChild);
-        cell.appendChild(dragged);
+        if (content.firstChild) returnSymbolToSide(content.firstChild);
+        content.appendChild(dragged);
       }
     };
 
     cell.onclick = () => {
-      if (locked && cell.firstChild) {
+      if (locked && content.firstChild) {
         cell.classList.toggle("marked");
         checkBingo();
       }
@@ -246,40 +252,29 @@ function createBoard() {
   }
 }
 
-/* ---------- SYMBOLS ---------- */
 function createSymbols(list) {
-  const left = document.getElementById("symbolsLeft");
-  const right = document.getElementById("symbolsRight");
-  left.innerHTML = "";
-  right.innerHTML = "";
-
-  list.forEach((src, index) => {
+  symbolsLeft.innerHTML = "";
+  symbolsRight.innerHTML = "";
+  list.forEach((src, i) => {
     const img = document.createElement("img");
     img.src = src;
     img.className = "symbol";
     img.draggable = true;
-
-    img.onerror = () => img.style.display = "none";
-
     img.ondragstart = () => dragged = img;
     img.ondragend = () => dragged = null;
-
-    (index < 15 ? left : right).appendChild(img);
+    (i < 15 ? symbolsLeft : symbolsRight).appendChild(img);
   });
 }
 
 function returnSymbolToSide(img) {
-  const left = document.getElementById("symbolsLeft");
-  const right = document.getElementById("symbolsRight");
-  (left.children.length <= right.children.length ? left : right).appendChild(img);
+  (symbolsLeft.children.length <= symbolsRight.children.length ? symbolsLeft : symbolsRight).appendChild(img);
 }
 
-/* ---------- CONTROLS ---------- */
 function confirmBoard() {
   if (!locked) {
     locked = true;
     clearInterval(timerInterval);
-    disableAllButtons();
+    disableButtons();
     alert("Board confirmed! 🎉 Game start!");
   }
 }
@@ -287,23 +282,22 @@ function confirmBoard() {
 function resetGame() {
   clearInterval(timerInterval);
   timerInterval = null;
-  document.getElementById("timer").textContent = "05:00";
-  document.getElementById("board").innerHTML = "";
-  document.getElementById("symbolsLeft").innerHTML = "";
-  document.getElementById("symbolsRight").innerHTML = "";
+  timer.textContent = "05:00";
+  board.innerHTML = "";
+  symbolsLeft.innerHTML = "";
+  symbolsRight.innerHTML = "";
   locked = false;
+  startBtn.disabled = false;
+  confirmBtn.disabled = false;
+  resetBtn.disabled = false;
   removeBingoOverlay();
-  document.getElementById("startBtn").disabled = false;
-  document.getElementById("confirmBtn").disabled = false;
-  document.getElementById("resetBtn").disabled = false;
 }
 
-function disableAllButtons() {
-  document.getElementById("confirmBtn").disabled = true;
-  document.getElementById("resetBtn").disabled = true;
+function disableButtons() {
+  confirmBtn.disabled = true;
+  resetBtn.disabled = true;
 }
 
-/* ---------- UTILS ---------- */
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -312,12 +306,13 @@ function shuffle(arr) {
   return arr;
 }
 
-/* ---------- BINGO CHECK ---------- */
 function checkBingo() {
-  const cells = Array.from(document.querySelectorAll("#board .cell"));
+  const cells = [...document.querySelectorAll(".cell")];
   const lines = [
-    [0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],
-    [0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],
+    [0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],
+    [15,16,17,18,19],[20,21,22,23,24],
+    [0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],
+    [3,8,13,18,23],[4,9,14,19,24],
     [0,6,12,18,24],[4,8,12,16,20]
   ];
 
@@ -329,62 +324,44 @@ function checkBingo() {
   }
 }
 
-/* ---------- BINGO OVERLAY ---------- */
 function showBingo(winningLine) {
-  removeBingoOverlay(); // remove previous overlay if exists
-
+  removeBingoOverlay();
   const overlay = document.createElement("div");
   overlay.id = "bingoOverlay";
-  overlay.style.position = "fixed";
-  overlay.style.top = "0";
-  overlay.style.left = "0";
-  overlay.style.width = "100%";
-  overlay.style.height = "100%";
-  overlay.style.background = "rgba(0,0,0,0.8)";
-  overlay.style.color = "#fff";
-  overlay.style.display = "flex";
-  overlay.style.flexDirection = "column";
-  overlay.style.alignItems = "center";
-  overlay.style.justifyContent = "center";
-  overlay.style.zIndex = "1000";
-  overlay.style.textAlign = "center";
+  overlay.style = `
+    position:fixed;inset:0;
+    background:rgba(0,0,0,0.8);
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    color:white;z-index:1000;
+  `;
+  const title = document.createElement("div");
+  title.textContent = "BINGO!! 🎉";
+  title.style.fontSize = "96px";
+  title.style.marginBottom = "30px";
+  overlay.appendChild(title);
 
-  const text = document.createElement("div");
-  text.textContent = "BINGO!! 🎉";
-  text.style.fontSize = "96px";
-  text.style.fontWeight = "bold";
-  text.style.marginBottom = "30px";
-  text.style.textShadow = "4px 4px 8px #000";
-  overlay.appendChild(text);
+  const row = document.createElement("div");
+  row.style.display = "flex";
+  row.style.gap = "12px";
 
-  // Container for winning symbols
-  const lineContainer = document.createElement("div");
-  lineContainer.style.display = "flex";
-  lineContainer.style.gap = "12px";
-
-  // 🔴 RESTORED LOGIC FROM V1
   winningLine.forEach(cell => {
-    if (cell.firstChild) {
-      const img = cell.firstChild.cloneNode(true);
+    const img = cell.querySelector("img")?.cloneNode(true);
+    if (img) {
       img.style.width = "120px";
       img.style.height = "120px";
-      img.style.objectFit = "contain";
-      lineContainer.appendChild(img);
+      row.appendChild(img);
     }
   });
 
-  overlay.appendChild(lineContainer);
+  overlay.appendChild(row);
   document.body.appendChild(overlay);
 }
 
 function removeBingoOverlay() {
-  const o = document.getElementById("bingoOverlay");
-  if (o) o.remove();
+  document.getElementById("bingoOverlay")?.remove();
 }
 </script>
 
 </body>
 </html>
-
-
-
